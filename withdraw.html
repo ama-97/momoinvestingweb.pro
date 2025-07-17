@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Retrait - Momoinvesting</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to bottom right, #1c1c1c, #2c3e50);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .withdraw-box {
+      background: rgba(0,0,0,0.6);
+      padding: 30px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h2 {
+      color: #00ffcc;
+      margin-bottom: 10px;
+    }
+    #cryptoInfo {
+      font-size: 14px;
+      margin-bottom: 20px;
+      color: #ccc;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #00ffcc;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #00cc99;
+    }
+    .message {
+      margin-top: 15px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="withdraw-box">
+    <h2>Demander un retrait</h2>
+    <div id="cryptoInfo">Chargement...</div>
+
+    <input type="number" id="withdrawAmount" placeholder="Montant à retirer" />
+    <select id="withdrawMethod">
+      <option value="moov">Moov Money</option>
+      <option value="tmoney">TMoney</option>
+      <option value="orange">Orange Money</option>
+    </select>
+    <input type="text" id="phoneNumber" placeholder="Numéro mobile (ex: +22897123456)" />
+    <button onclick="requestWithdraw()">Envoyer la demande</button>
+    <div class="message" id="message"></div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const realtimeDB = firebase.database();
+
+    // Lire la crypto depuis l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedCrypto = urlParams.get('crypto') || 'bitcoin';
+
+    const cryptoInfoEl = document.getElementById('cryptoInfo');
+    const amountInput = document.getElementById('withdrawAmount');
+
+    let minAmount = selectedCrypto.toLowerCase() === 'solana' ? 1500 : 5000;
+
+    cryptoInfoEl.textContent = `Crypto sélectionnée : ${selectedCrypto.toUpperCase()} — Montant minimum : ${minAmount} FCFA`;
+    amountInput.placeholder = `Montant à retirer (min ${minAmount} FCFA)`;
+
+    function requestWithdraw() {
+      const amount = parseInt(amountInput.value);
+      const method = document.getElementById('withdrawMethod').value;
+      const phone = document.getElementById('phoneNumber').value.trim();
+      const messageEl = document.getElementById('message');
+
+      if (!amount || amount < minAmount) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = `Le montant minimum est de ${minAmount} FCFA`;
+        return;
+      }
+
+      if (!phone.match(/^\+?\d{8,15}$/)) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = 'Numéro invalide (ex: +22897123456)';
+        return;
+      }
+
+      const user = auth.currentUser;
+      if (!user) {
+        messageEl.style.color = 'red';
+        messageEl.textContent = 'Vous devez être connecté.';
+        return;
+      }
+
+      const userRef = realtimeDB.ref('users/' + user.uid);
+      userRef.once('value')
+        .then(snapshot => {
+          if (!snapshot.exists()) {
+            throw new Error('Utilisateur introuvable.');
+          }
+
+          const userData = snapshot.val();
+          const solde = userData.solde || 0;
+
+          if (amount > solde) {
+            throw new Error('Solde insuffisant.');
+          }
+
+          // Enregistrer le retrait
+          return db.collection('withdrawals').add({
+            userId: user.uid,
+            crypto: selectedCrypto,
+            amount: amount,
+            method: method,
+            phoneNumber: phone,
+            status: 'en attente',
+            requestedAt: new Date().toISOString()
+          }).then(() => {
+            return userRef.update({ solde: solde - amount });
+          });
+        })
+        .then(() => {
+          messageEl.style.color = 'lime';
+          messageEl.textContent = 'Demande de retrait envoyée !';
+          amountInput.value = '';
+          document.getElementById('phoneNumber').value = '';
+        })
+        .catch(error => {
+          messageEl.style.color = 'red';
+          messageEl.textContent = 'Erreur : ' + error.message;
+        });
+    }
+  </script>
+</body>
+</html>

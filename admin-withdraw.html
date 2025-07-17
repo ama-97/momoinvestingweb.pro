@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Retraits</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #1e1e2f;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+      color: #00ffcc;
+    }
+    .withdrawal {
+      background: #2a2a3b;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .withdrawal p {
+      margin: 5px 0;
+    }
+    .buttons {
+      margin-top: 10px;
+    }
+    button {
+      padding: 10px 15px;
+      margin-right: 10px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .approve {
+      background-color: #00cc88;
+      color: #fff;
+    }
+    .reject {
+      background-color: #cc0033;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h2>Tableau de Bord Admin – Retraits</h2>
+  <div id="withdrawalsContainer"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const container = document.getElementById('withdrawalsContainer');
+
+    // Vérifier que seul l’admin peut accéder à cette page
+    auth.onAuthStateChanged(user => {
+      if (!user || user.email !== "traderatike@gmail.com") {
+        alert("Accès refusé. Vous n’êtes pas administrateur.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      // Charger uniquement les retraits en attente
+      db.collection('withdrawals')
+        .where('status', '==', 'pending')
+        .orderBy("requestedAt", "desc")
+        .onSnapshot(snapshot => {
+          container.innerHTML = ""; // vider
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const date = data.requestedAt?.toDate();
+            const formattedDate = date ? date.toLocaleString() : "Date inconnue";
+
+            const box = document.createElement("div");
+            box.className = "withdrawal";
+            box.innerHTML = `
+              <p><strong>Montant :</strong> ${data.amount} FCFA</p>
+              <p><strong>Numéro :</strong> ${data.phoneNumber}</p>
+              <p><strong>Méthode :</strong> ${data.method}</p>
+              <p><strong>Date :</strong> ${formattedDate}</p>
+              <p><strong>Statut :</strong> ${data.status}</p>
+              <div class="buttons">
+                <button class="approve" onclick="updateStatus('${doc.id}', '${data.userId}', ${data.amount}, 'approved')">Valider</button>
+                <button class="reject" onclick="updateStatus('${doc.id}', '${data.userId}', ${data.amount}, 'rejected')">Refuser</button>
+              </div>
+            `;
+            container.appendChild(box);
+          });
+        });
+    });
+
+    // Fonction pour valider ou refuser
+    function updateStatus(docId, userId, amount, newStatus) {
+      db.collection('withdrawals').doc(docId).update({
+        status: newStatus
+      }).then(() => {
+        if (newStatus === 'rejected') {
+          // Si refusé, rembourser le solde
+          db.collection('users').doc(userId).get().then(userDoc => {
+            const userData = userDoc.data();
+            const currentBalance = userData.balance || 0;
+            db.collection('users').doc(userId).update({
+              balance: currentBalance + amount
+            });
+          });
+        }
+
+        alert("Retrait " + (newStatus === 'approved' ? 'validé ✅' : 'refusé ❌'));
+      }).catch(error => {
+        alert("Erreur : " + error.message);
+      });
+    }
+  </script>
+</body>
+</html>

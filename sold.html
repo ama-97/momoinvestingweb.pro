@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - Solde & Historique</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #1e1e2f;
+      color: white;
+      padding: 20px;
+    }
+    h2 {
+      color: #00ffcc;
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .balance {
+      background: #2a2a3b;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #00cc88;
+    }
+    .transactions {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .transaction {
+      background: #33334d;
+      margin-bottom: 12px;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .transaction strong {
+      color: #00cc88;
+    }
+    .type-deposit {
+      border-left: 5px solid #00cc88;
+    }
+    .type-withdrawal {
+      border-left: 5px solid #ff4444;
+    }
+  </style>
+</head>
+<body>
+  <h2>Ton solde & historique des transactions</h2>
+
+  <div class="balance">
+    Solde actuel : <span id="balance">0</span> FCFA
+  </div>
+
+  <div class="transactions" id="transactions">
+    <p>Chargement des transactions...</p>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const balanceEl = document.getElementById('balance');
+    const transactionsEl = document.getElementById('transactions');
+
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const uid = user.uid;
+
+      // Récupérer et afficher le solde
+      db.collection('users').doc(uid).get().then(doc => {
+        if (doc.exists) {
+          balanceEl.textContent = doc.data().balance || 0;
+        }
+      });
+
+      // Récupérer les dépôts et retraits
+      Promise.all([
+        db.collection('deposits').where('userId', '==', uid).get(),
+        db.collection('withdrawals').where('userId', '==', uid).get()
+      ]).then(([depositsSnap, withdrawalsSnap]) => {
+        const transactions = [];
+
+        depositsSnap.forEach(doc => {
+          const data = doc.data();
+          transactions.push({
+            type: 'Dépôt',
+            amount: data.amount,
+            status: data.status,
+            date: data.createdAt ? data.createdAt.toDate() : null,
+          });
+        });
+
+        withdrawalsSnap.forEach(doc => {
+          const data = doc.data();
+          transactions.push({
+            type: 'Retrait',
+            amount: data.amount,
+            status: data.status,
+            date: data.requestedAt ? data.requestedAt.toDate() : null,
+          });
+        });
+
+        // Trier par date décroissante
+        transactions.sort((a, b) => b.date - a.date);
+
+        // Affichage
+        transactionsEl.innerHTML = '';
+
+        if (transactions.length === 0) {
+          transactionsEl.innerHTML = '<p>Aucune transaction trouvée.</p>';
+          return;
+        }
+
+        transactions.forEach(t => {
+          const dateStr = t.date ? t.date.toLocaleString("fr-FR") : 'Date inconnue';
+          const cls = t.type === 'Dépôt' ? 'type-deposit' : 'type-withdrawal';
+          const html = `
+            <div class="transaction ${cls}">
+              <strong>${t.type}</strong><br>
+              Montant : ${t.amount} FCFA<br>
+              Statut : ${t.status}<br>
+              Date : ${dateStr}
+            </div>
+          `;
+          transactionsEl.insertAdjacentHTML('beforeend', html);
+        });
+      }).catch(err => {
+        transactionsEl.innerHTML = `<p>Erreur de chargement : ${err.message}</p>`;
+      });
+    });
+  </script>
+</body>
+</html>

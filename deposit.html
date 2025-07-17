@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dépôt - Momoinvesting</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to bottom right, #1c1c1c, #2c3e50);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .deposit-box {
+      background: rgba(0,0,0,0.6);
+      padding: 30px;
+      border-radius: 10px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h2 {
+      margin-bottom: 10px;
+      color: #00ffcc;
+    }
+    p {
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #00ffcc;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #00cc99;
+    }
+  </style>
+</head>
+<body>
+  <div class="deposit-box">
+    <h2>Investir en <span id="cryptoName">...</span></h2>
+    <p>Montant minimum requis : <strong><span id="minAmount">0</span> FCFA</strong></p>
+    <input type="number" id="amount" placeholder="Montant à investir" />
+    <button onclick="makeDeposit()">Payer avec Moov Money</button>
+  </div>
+
+  <!-- SDK CinetPay -->
+  <script src="https://www.cinetpay.com/cdn/seamless_sdk.js"></script>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const crypto = new URLSearchParams(window.location.search).get("crypto") || "bitcoin";
+    const cryptoNameEl = document.getElementById("cryptoName");
+    const minAmountEl = document.getElementById("minAmount");
+    const amountInput = document.getElementById("amount");
+
+    const minAmounts = {
+      solana: 1500,
+      bitcoin: 5000,
+      ethereum: 5000,
+      cardano: 5000,
+      bnb: 5000,
+      litecoin: 5000,
+      dogecoin: 5000,
+      xrp: 5000
+    };
+
+    const cryptoFormatted = crypto.charAt(0).toUpperCase() + crypto.slice(1);
+    const minAmount = minAmounts[crypto.toLowerCase()] || 5000;
+
+    cryptoNameEl.textContent = cryptoFormatted;
+    minAmountEl.textContent = minAmount;
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    function makeDeposit() {
+      const amount = parseInt(amountInput.value);
+      if (!amount || amount < minAmount) {
+        alert("Le montant minimum pour " + cryptoFormatted + " est de " + minAmount + " FCFA");
+        return;
+      }
+
+      const transaction_id = crypto.toUpperCase() + "_" + Date.now();
+
+      CinetPay.setConfig({
+        apikey: "690174361687412a64aa406.23682902",
+        site_id: "105901849",
+        notify_url: "https://ton-site.com/notify", // Remplace ce lien par ton vrai notify_url
+        mode: "PRODUCTION"
+      });
+
+      CinetPay.getCheckout({
+        transaction_id: transaction_id,
+        amount: amount,
+        currency: "XOF",
+        channels: "ALL",
+        description: "Investissement en " + cryptoFormatted
+      });
+
+      CinetPay.waitResponse(function(data) {
+        if (data.status === "REFUSED") {
+          alert("Paiement refusé");
+        } else if (data.status === "ACCEPTED") {
+          auth.onAuthStateChanged((user) => {
+            if (user) {
+              db.collection("deposits").add({
+                userId: user.uid,
+                amount: amount,
+                crypto: cryptoFormatted,
+                status: "success",
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              }).then(() => {
+                alert("Paiement enregistré avec succès !");
+                window.location.href = "dashboard.html";
+              }).catch(err => {
+                alert("Erreur lors de l'enregistrement : " + err.message);
+              });
+            } else {
+              alert("Utilisateur non connecté !");
+              window.location.href = "login.html";
+            }
+          });
+        }
+      });
+
+      CinetPay.onError(function(data) {
+        alert("Erreur CinetPay : " + JSON.stringify(data));
+      });
+    }
+  </script>
+</body>
+</html>

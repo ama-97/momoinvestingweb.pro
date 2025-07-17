@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - Momoinvesting</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to right, #232526, #414345);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .dashboard {
+      width: 100%;
+      max-width: 500px;
+      background: rgba(0,0,0,0.6);
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    h2 {
+      color: #00ffcc;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      background: #00ffcc;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: #00cc99;
+    }
+
+    .logout {
+      margin-top: 30px;
+      background-color: crimson;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <h2>Salut ! <span id="username">...😎</span></h2>
+
+    <a href="deposit.html" class="btn">Faire un dépôt</a>
+    <a href="withdraw.html" class="btn">Demander un retrait</a>
+    <button class="btn" onclick="copyReferral()">Lien de parrainage</button>
+    <a href="solde.html" class="btn">Solde & Historique</a>
+
+    <button class="btn logout" onclick="logout()">Se déconnecter</button>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script src="firebase-config.js"></script>
+
+  <script>
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const usernameEl = document.getElementById("username");
+
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        db.collection("users").doc(user.uid).get()
+          .then(doc => {
+            if (doc.exists) {
+              const data = doc.data();
+              usernameEl.textContent = data.name || "Utilisateur";
+            } else {
+              usernameEl.textContent = "Utilisateur";
+            }
+          });
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    function logout() {
+      auth.signOut().then(() => {
+        window.location.href = "login.html";
+      });
+    }
+
+    function copyReferral() {
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          const link = window.location.origin + "/register.html?ref=" + user.uid;
+          navigator.clipboard.writeText(link).then(() => {
+            alert("Lien copié : " + link);
+          });
+        }
+      });
+    }
+  </script>
+</body>
+</html>
