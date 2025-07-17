@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inscription - Momoinvesting</title>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase-config.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     body {
@@ -93,20 +97,10 @@
     <input type="email" id="email" placeholder="Adresse email" required />
     <input type="password" id="password" placeholder="Mot de passe" required />
     <button onclick="register()">S'inscrire</button>
-
     <div class="login-link">
       <p>Déjà un compte ? <a href="login.html">Se connecter</a></p>
     </div>
   </div>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-  <!-- Configuration Firebase -->
-  <script src="firebase-config.js"></script>
-
   <script>
     const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -117,7 +111,7 @@
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
       const msg = document.getElementById("message");
-
+      
       msg.innerHTML = "";
 
       if (!name || !email || !password) {
