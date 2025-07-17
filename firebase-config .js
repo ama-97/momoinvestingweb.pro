@@ -11,6 +11,4 @@
     appId: "1:125503752102:web:a5ee7dd0155e85fbe93167",
     databaseURL: "https://momoinvesting-e85dc-default-rtdb.firebaseio.com"
   };
-
-  firebase.initializeApp(firebaseConfig);
 </script>
