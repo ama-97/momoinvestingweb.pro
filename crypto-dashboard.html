@@ -25,14 +25,12 @@
       color: #00ffcc;
       text-shadow: 1px 1px 4px #000;
     }
-
     .crypto-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 25px;
       padding: 10px;
     }
-
     .crypto-card {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 12px;
@@ -40,27 +38,22 @@
       transition: transform 0.3s;
       box-shadow: 0 0 12px rgba(0,0,0,0.3);
     }
-
     .crypto-card:hover {
       transform: scale(1.03);
     }
-
     .crypto-card img {
       width: 80px;
       height: 80px;
       object-fit: contain;
       margin-bottom: 15px;
     }
-
     .crypto-card h3 {
       margin: 10px 0 5px;
       color: #00ffcc;
     }
-
     .crypto-card p {
       margin: 5px 0;
     }
-
     .crypto-card button {
       background: #00cc88;
       color: white;
@@ -71,16 +64,13 @@
       margin-top: 10px;
       cursor: pointer;
     }
-
     .crypto-card button:hover {
       background: #009966;
     }
   </style>
 </head>
 <body>
-
   <h1>🚀 Investir en Crypto dès aujourd’hui !</h1>
-
   <div class="crypto-grid">
     <!-- Solana -->
     <div class="crypto-card">
@@ -89,7 +79,6 @@
       <p>Investir à partir de <strong>5.000 FCFA</strong></p>
       <button onclick="invest('solana')">Investir</button>
     </div>
-
     <!-- Bitcoin -->
     <div class="crypto-card">
       <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.png" alt="Bitcoin">
@@ -97,7 +86,6 @@
       <p>Investir à partir de <strong>10.000 FCFA</strong></p>
       <button onclick="invest('bitcoin')">Investir</button>
     </div>
-
     <!-- Ethereum -->
     <div class="crypto-card">
       <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png" alt="Ethereum">
@@ -105,7 +93,6 @@
       <p>Investir à partir de <strong>15.000 FCFA</strong></p>
       <button onclick="invest('ethereum')">Investir</button>
     </div>
-
     <!-- Binance Coin -->
     <div class="crypto-card">
       <img src="https://cryptologos.cc/logos/bnb-bnb-logo.png" alt="BNB">
@@ -113,7 +100,6 @@
       <p>Investir à partir de <strong>17.000 FCFA</strong></p>
       <button onclick="invest('bnb')">Investir</button>
     </div>
-
     <!-- Ripple -->
     <div class="crypto-card">
       <img src="https://cryptologos.cc/logos/xrp-xrp-logo.png" alt="XRP">
@@ -121,7 +107,6 @@
       <p>Investir à partir de <strong>20.000 FCFA</strong></p>
       <button onclick="invest('xrp')">Investir</button>
     </div>
-
     <!-- Cardano -->
     <div class="crypto-card">
       <img src="https://cryptologos.cc/logos/cardano-ada-logo.png" alt="ADA">
@@ -129,7 +114,6 @@
       <p>Investir à partir de <strong>20.000 FCFA</strong></p>
       <button onclick="invest('cardano')">Investir</button>
     </div>
-
     <!-- Dogecoin -->
     <div class="crypto-card">
       <img src="https://cryptologos.cc/logos/dogecoin-doge-logo.png" alt="DOGE">
@@ -137,7 +121,6 @@
       <p>Investir à partir de <strong>25.000FCFA</strong></p>
       <button onclick="invest('dogecoin')">Investir</button>
     </div>
-
     <!-- Polkadot -->
     <div class="crypto-card">
       <img src="https://cryptologos.cc/logos/polkadot-new-dot-logo.png" alt="DOT">
@@ -146,12 +129,10 @@
       <button onclick="invest('polkadot')">Investir</button>
     </div>
   </div>
-
   <script>
     function invest(crypto) {
       window.location.href = "deposit.html?crypto=" + encodeURIComponent(crypto);
     }
   </script>
-
 </body>
 </html>
